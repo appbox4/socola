@@ -75,8 +75,17 @@ main{max-width:480px;margin:0 auto;padding:12px 16px 40px;position:relative;z-in
 .galeria header{position:relative;background:none;backdrop-filter:none;border:0;display:flex;align-items:center;justify-content:space-between;color:#fff;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top))}
 .galeria h3{font-family:Fredoka,sans-serif;font-weight:600;font-size:22px}
 .cerrar{font-size:32px;width:44px;height:44px;color:#fff}
-.fotos{flex:1;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;gap:14px;padding:0 16px 24px;align-items:center}
-.fotos img{width:100%;max-width:440px;height:auto;flex:none;border-radius:16px;display:block}
+.fotos{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 24px}
+.rejilla{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px;margin:0 auto}
+.fotos button{display:block;position:relative;border-radius:12px;overflow:hidden;background:#fff;aspect-ratio:3/4;min-height:0;width:100%}
+.fotos img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.visor{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.96);display:none;flex-direction:column}
+.visor.abierto{display:flex}
+.visor .barra{display:flex;align-items:center;justify-content:space-between;color:#fff;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));font-size:14px;font-weight:600}
+.visor .marco{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:0 8px;touch-action:pan-y pinch-zoom}
+.visor .marco img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+.visor .nav{display:flex;justify-content:space-between;padding:10px 16px;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+.visor .nav button{color:#fff;background:rgba(255,255,255,.15);border-radius:99px;min-height:44px;padding:0 18px;font-weight:700}
 .desliza{text-align:center;color:#fff;opacity:.7;font-size:13px;padding-bottom:max(16px,env(safe-area-inset-bottom))}
 .nieve{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .nieve span{position:absolute;top:-20px;animation:cae linear infinite}
@@ -110,9 +119,14 @@ footer{text-align:center;font-size:12px;opacity:.6;padding:10px 16px 30px;positi
 <div class="galeria" id="galeria" role="dialog" aria-modal="true" aria-label="Testimonios">
   <header><h3>Clientas Socola ✦</h3><button class="cerrar" onclick="cerrarTestimonios()" aria-label="Cerrar">×</button></header>
   <div class="fotos" id="fotos"></div>
-  <div class="desliza">Desliza hacia abajo para ver más ↓</div>
+  <div class="desliza">Toca una foto para verla en grande</div>
 </div>
 
+<div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Testimonio en grande">
+  <div class="barra"><span id="contador"></span><button class="cerrar" onclick="cerrarVisor()" aria-label="Cerrar">×</button></div>
+  <div class="marco" id="marco"><img id="grande" alt=""></div>
+  <div class="nav"><button onclick="moverVisor(-1)">‹ Anterior</button><button onclick="moverVisor(1)">Siguiente ›</button></div>
+</div>
 <script>
 /* ====== DATOS QUE PUEDES CAMBIAR ====== */
 const WHATSAPP = "573228231132";
@@ -311,7 +325,7 @@ function empezar(){ sesion++; datos = {}; chat.innerHTML = ""; window.scrollTo(0
 /* ====== TESTIMONIOS ====== */
 function verTestimonios(){
   const f = document.getElementById("fotos");
-  if (!f.children.length) f.innerHTML = TESTIMONIOS.map(t => `<img src="${t.src}" alt="${t.alt}" loading="lazy">`).join("");
+  if (!f.children.length) f.innerHTML = '<div class="rejilla">' + TESTIMONIOS.map((t, i) => `<button onclick="abrirVisor(${i})" aria-label="Ver en grande: ${t.alt}"><img src="${t.src}" alt="${t.alt}" loading="lazy"></button>`).join("") + "</div>";
   document.getElementById("galeria").classList.add("abierta");
   document.body.style.overflow = "hidden";
 }
@@ -319,7 +333,29 @@ function cerrarTestimonios(){
   document.getElementById("galeria").classList.remove("abierta");
   document.body.style.overflow = "";
 }
-document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarTestimonios(); });
+let actual = 0;
+function abrirVisor(i){ actual = i; pintarVisor(); document.getElementById("visor").classList.add("abierto"); }
+function pintarVisor(){
+  const t = TESTIMONIOS[actual], g = document.getElementById("grande");
+  g.src = t.src; g.alt = t.alt;
+  document.getElementById("contador").textContent = `${actual + 1} de ${TESTIMONIOS.length}`;
+}
+function moverVisor(d){ actual = (actual + d + TESTIMONIOS.length) % TESTIMONIOS.length; pintarVisor(); }
+function cerrarVisor(){ document.getElementById("visor").classList.remove("abierto"); }
+let x0 = null;
+const marco = document.getElementById("marco");
+marco.addEventListener("touchstart", e => { x0 = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+marco.addEventListener("touchend", e => {
+  if (x0 === null) return;
+  const dx = e.changedTouches[0].clientX - x0; x0 = null;
+  if (Math.abs(dx) > 50) moverVisor(dx < 0 ? 1 : -1);
+});
+document.addEventListener("keydown", e => {
+  const v = document.getElementById("visor").classList.contains("abierto");
+  if (e.key === "Escape") v ? cerrarVisor() : cerrarTestimonios();
+  if (v && e.key === "ArrowRight") moverVisor(1);
+  if (v && e.key === "ArrowLeft") moverVisor(-1);
+});
 
 /* ====== NIEVE NAVIDEÑA ====== */
 const nieve = document.getElementById("nieve");
