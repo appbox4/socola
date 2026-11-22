@@ -124,6 +124,17 @@ main{padding-bottom:30px}
 @keyframes dot{50%{opacity:1;transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.nieve{display:none}*{animation:none!important}}
 </style>
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','444951933617137');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=444951933617137&ev=PageView&noscript=1"/></noscript>
 </head>
 <body>
 <div class="nieve" id="nieve" aria-hidden="true"></div>
@@ -165,7 +176,7 @@ main{padding-bottom:30px}
     <p>Somos una marca colombiana nacida en San Vicente de Chucurí, tierra de cacao. Desde 2016 elaboramos productos naturales a base de cacao puro y aguacate chucureño para el cuidado de la piel en el embarazo, el posparto y el día a día.</p>
     <h4>Atención al cliente</h4>
     <ul>
-      <li><span>💬</span><span>WhatsApp: <a href="https://wa.me/573228231132" target="_blank" rel="noopener">+57 322 823 1132</a></span></li>
+      <li><span>💬</span><span>WhatsApp: <a href="https://wa.me/573228231132" target="_blank" rel="noopener" onclick="px('Contact')">+57 322 823 1132</a></span></li>
       <li><span>🕘</span><span>Todos los días de 9:00 a.m. a 9:00 p.m.</span></li>
       <li><span>📍</span><span>San Vicente de Chucurí, Santander, Colombia</span></li>
       <li><span>🤝</span><span>Te asesoramos antes y después de tu compra</span></li>
@@ -191,6 +202,12 @@ main{padding-bottom:30px}
 /* ====== DATOS QUE PUEDES CAMBIAR ====== */
 const WHATSAPP = "573228231132";
 const DESCUENTO = 10; // % de descuento pagando por Nequi / Bre-B
+function px(ev, data){ try { if (window.fbq) fbq("track", ev, data || {}); } catch(e){} }
+function pxKit(ev, k, conDescuento){
+  const kit = KITS[k]; if (!kit) return;
+  const valor = conDescuento ? Math.round(kit.precio * (100 - DESCUENTO) / 100) : kit.precio;
+  px(ev, { content_name: kit.nombre, content_ids: [k], content_type: "product", value: valor, currency: "COP" });
+}
 const LLAVE = "0093645494"; // Llave Nequi Negocios (Bre-B)
 const TITULAR = "Carlos Ovalle";
 const CDN = "https://cdn.shopify.com/s/files/1/0774/2400/1242/files/";
@@ -341,6 +358,7 @@ async function resultado(k){
     : "Por lo que me contaste, este kit es justo lo que necesitas, y es nuestra opción con mejor precio.";
   await botDice(["¡Listo! Ya sé qué es lo mejor para ti ✨"], s);
   if (s !== sesion) return;
+  pxKit("Lead", k);
   const msg = encodeURIComponent(
     `¡Hola Socola! 🎄 Hice el test en la página y me recomendaron el ${kit.nombre}.\n` +
     `Lo busco para: ${datos.motivo || "-"}${datos.nivel ? ` (nivel ${datos.nivel}/10)` : ""}.\n` +
@@ -360,9 +378,9 @@ async function resultado(k){
       <div class="titular">A nombre de ${TITULAR}</div>
       <div class="paso"><b>2.</b> Toma un pantallazo del pago.</div>
       <div class="paso"><b>3.</b> Envíanos el comprobante y tus datos de envío por WhatsApp:</div>
-      <a class="btn btn-wa" href="https://wa.me/${WHATSAPP}?text=${msg}" target="_blank" rel="noopener">Ya pagué, enviar comprobante</a>
+      <a class="btn btn-wa" href="https://wa.me/${WHATSAPP}?text=${msg}" target="_blank" rel="noopener" onclick="pxKit('Purchase','${k}',true)">Ya pagué, enviar comprobante</a>
     </div>
-    <a class="btn btn-wompi" href="${kit.wompi}" target="_blank" rel="noopener">Pagar en línea con Wompi · ${cop(kit.precio)}</a>
+    <a class="btn btn-wompi" href="${kit.wompi}" target="_blank" rel="noopener" onclick="pxKit('InitiateCheckout','${k}')">Pagar en línea con Wompi · ${cop(kit.precio)}</a>
     <div class="segura">
       <h3>Compra con confianza</h3>
       <ul>
@@ -387,7 +405,8 @@ function irGuia(){
 }
 function irAsesora(extra){
   const t = encodeURIComponent("¡Hola Socola! 🎄 Vengo de la página y quiero asesoría." + (typeof extra === "string" ? " " + extra : ""));
-  window.location.href = `https://wa.me/${WHATSAPP}?text=${t}`;
+  px("Contact");
+  setTimeout(() => { window.location.href = `https://wa.me/${WHATSAPP}?text=${t}`; }, 300);
 }
 
 function copiarLlave(b){
