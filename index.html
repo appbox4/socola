@@ -466,7 +466,39 @@ for (let i = 0; i < 22; i++){
   nieve.appendChild(s);
 }
 
-empezar();
+/* ====== COMPRA CONFIRMADA POR WOMPI ======
+   Al terminar de pagar, Wompi devuelve al cliente a esta página con ?id=<transacción>.
+   Se consulta el estado en Wompi y solo si está APROBADA se envía Purchase al píxel. */
+async function revisarPagoWompi(){
+  const id = new URLSearchParams(location.search).get("id");
+  if (!id) return false;
+  history.replaceState(null, "", location.pathname);
+  try {
+    const r = await fetch("https://production.wompi.co/v1/transactions/" + encodeURIComponent(id));
+    const t = (await r.json()).data;
+    if (!t || t.status !== "APPROVED") return false;
+    const valor = Math.round(t.amount_in_cents / 100);
+    const k = Object.keys(KITS).find(x => t.payment_link_id && KITS[x].wompi.endsWith("/" + t.payment_link_id))
+           || Object.keys(KITS).find(x => KITS[x].precio === valor);
+    const kit = KITS[k];
+    const clave = "socola_compra_" + t.id;
+    let yaContada = false;
+    try { yaContada = !!localStorage.getItem(clave); } catch(e){}
+    if (!yaContada && window.fbq){
+      fbq("track", "Purchase", { content_name: kit ? kit.nombre : "Socola", content_ids: k ? [k] : [], content_type: "product", value: valor, currency: "COP" }, { eventID: String(t.id) });
+      try { localStorage.setItem(clave, "1"); } catch(e){}
+    }
+    sesion++; chat.innerHTML = ""; window.scrollTo(0, 0);
+    await botDice([
+      "¡Gracias por tu compra! 💛 Tu pago de <b>" + cop(valor) + "</b> fue aprobado" + (kit ? " para el <b>" + kit.nombre + "</b>" : "") + ".",
+      "Para despachar tu pedido, envíanos tus datos de envío por WhatsApp."
+    ], sesion);
+    agregar("opciones", '<button class="btn btn-wa" onclick="irDatos()">Enviar mis datos de envío</button><button class="btn btn-sec" onclick="empezar()">Volver al inicio</button>');
+    return true;
+  } catch(e){ return false; }
+}
+
+revisarPagoWompi().then(ok => { if (!ok) empezar(); });
 </script>
 </body>
 </html>
