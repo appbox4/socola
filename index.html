@@ -378,7 +378,7 @@ async function resultado(k){
       <div class="titular">A nombre de ${TITULAR}</div>
       <div class="paso"><b>2.</b> Toma un pantallazo del pago.</div>
       <div class="paso"><b>3.</b> Envíanos el comprobante y tus datos de envío por WhatsApp:</div>
-      <a class="btn btn-wa" href="https://wa.me/${WHATSAPP}?text=${msg}" target="_blank" rel="noopener" onclick="pxKit('Purchase','${k}',true)">Ya pagué, enviar comprobante</a>
+      <a class="btn btn-wa" href="https://wa.me/${WHATSAPP}?text=${msg}" target="_blank" rel="noopener" onclick="pxKit('Lead','${k}',true)">Ya pagué, enviar comprobante</a>
     </div>
     <a class="btn btn-wompi" href="${kit.wompi}" target="_blank" rel="noopener" onclick="pxKit('InitiateCheckout','${k}')">Pagar en línea con Wompi · ${cop(kit.precio)}</a>
     <div class="segura">
